@@ -23,7 +23,7 @@ Jarvis Assistant is a voice-activated assistant that leverages speech recognitio
 
 1. Clone this repository:
     ```bash
-    git clone https://github.com/yourusername/jarvis-assistant.git
+    git clone https://github.com/Vishnu8299/jarvis-assistant.git
     ```
 2. Navigate to the project directory:
     ```bash
