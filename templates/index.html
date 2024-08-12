@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <div id="chat-box" class="chat-box"></div>
+        <div class="input-container">
+            <input id="user-input" type="text" placeholder="Type your message..." />
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('send-btn').addEventListener('click', async () => {
+            const userInput = document.getElementById('user-input').value;
+            if (userInput.trim()) {
+                appendMessage('User', userInput);
+                document.getElementById('user-input').value = '';
+
+                const responseDiv = appendMessage('Bot', '<div class="typing-indicator"></div>');
+
+                try {
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input: userInput })
+                    });
+
+                    const data = await response.json();
+                    updateMessage(responseDiv, data.response);
+                } catch (error) {
+                    updateMessage(responseDiv, 'An error occurred. Please try again.');
+                }
+            }
+        });
+
+        function appendMessage(sender, message) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender.toLowerCase()}-message`;
+            messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return messageDiv;
+        }
+
+        function updateMessage(div, newMessage) {
+            div.innerHTML = `<strong>Bot:</strong> ${newMessage}`;
+        }
+    </script>
+</body>
+</html>
