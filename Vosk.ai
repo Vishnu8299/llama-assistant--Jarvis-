@@ -1,0 +1,109 @@
+import os
+import queue
+import sounddevice as sd
+import vosk
+import json
+import pyttsx3
+import subprocess
+from langchain_ollama import OllamaLLM
+
+# Initialize the Vosk model with the correct path
+model_path = r"C:\Users\pradeep\Downloads\vosk-model-en-us-0.22\vosk-model-en-us-0.22"
+model = vosk.Model(model_path)
+
+# Initialize the TTS engine and conversation model
+tts_engine = pyttsx3.init()
+conversation_model = OllamaLLM(model="llama3")  # Replace with your model details
+
+# Create a queue to store the audio data
+q = queue.Queue()
+
+# Function to receive audio input
+def callback(indata, frames, time, status):
+    if status:
+        print(f"Audio stream status: {status}")
+    q.put(bytes(indata))
+
+# Function to capture audio input and convert it to text using Vosk
+def listen_for_audio():
+    rec = vosk.KaldiRecognizer(model, 16000)
+    with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
+                           channels=1, callback=callback):
+        print("Listening...")
+        while True:
+            data = q.get()
+            if rec.AcceptWaveform(data):
+                result = rec.Result()
+                result_dict = json.loads(result)
+                text = result_dict.get('text', '')
+                if text:
+                    print(f"You: {text}")
+                    return text
+            else:
+                partial_result = rec.PartialResult()
+                if partial_result:
+                    print(partial_result)
+
+# Function to speak the output text
+def speak_text(text):
+    tts_engine.say(text)
+    tts_engine.runAndWait()
+
+# Function to execute system commands
+def execute_command(command):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        return result.stdout + result.stderr
+    except Exception as e:
+        return str(e)
+
+# File to store conversation history
+history_file = "conversation_history.txt"
+
+# Load conversation history from file
+def load_history():
+    if os.path.exists(history_file):
+        with open(history_file, "r", encoding="utf-8") as file:
+            return file.read().splitlines()
+    return []
+
+# Save conversation history to file
+def save_history(history):
+    with open(history_file, "w", encoding="utf-8") as file:
+        for line in history:
+            file.write(f"{line}\n")
+
+# Initialize conversation history
+conversation_history = load_history()
+
+# Main program loop
+while True:
+    # Capture audio input
+    user_input = listen_for_audio()
+    if user_input:
+        # Update conversation history with user input
+        conversation_history.append(f"User: {user_input}")
+
+        # Combine history into a single prompt
+        prompt = "\n".join(conversation_history) + "\nBot:"
+
+        # Invoke the model with the conversation history
+        result = conversation_model.invoke(input=prompt)
+        print(f"Model response: {result}")
+
+        # Update conversation history with model response
+        conversation_history.append(f"Bot: {result}")
+
+        # Check if the model's response indicates a command
+        if "execute" in result.lower():
+            command = result.lower().replace("execute", "").strip()
+            command_output = execute_command(command)
+            response = f"Executed command. Output: {command_output}"
+        else:
+            response = result
+
+        # Convert the result to speech
+        speak_text(response)
+        
+        # Save conversation history to file
+        save_history(conversation_history)
