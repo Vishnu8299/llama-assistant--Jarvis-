@@ -32,7 +32,7 @@
                     });
 
                     const data = await response.json();
-                    updateMessage(responseDiv, data.response);
+                    updateMessage(responseDiv, `${data.response} (Response time: ${data.response_time.toFixed(2)} seconds)`);
                 } catch (error) {
                     updateMessage(responseDiv, 'An error occurred. Please try again.');
                 }
