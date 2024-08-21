@@ -8,8 +8,6 @@ Jarvis Assistant is a voice-activated assistant that leverages speech recognitio
 - **Text-to-Speech**: Converts text responses into spoken output using the `pyttsx3` library.
 - **Natural Language Processing**: Uses the OllamaLLM model for generating responses based on conversation history.
 - **Command Execution**: Executes system commands based on user requests.
-- **Conversation History**: Maintains and saves conversation history to a file for continuity.
-
 ## Requirements
 
 - Python 3.x
