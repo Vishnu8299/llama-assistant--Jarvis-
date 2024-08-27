@@ -5,6 +5,7 @@ import time
 from langchain_ollama import OllamaLLM
 
 app = Flask(__name__)
+
 model = OllamaLLM(model="llama3")
 history_file = "conversation_history.txt"
 
